@@ -35,3 +35,8 @@ Layout/IndentationConsistency:
 # 文字列をダブルクオーテーションで記載することを強制する
 StringLiterals:
   EnforcedStyle: double_quotes
+
+# 配列の生成時にブラケットを使用することを強制する
+Style/WordArray:
+  EnforcedStyle: brackets
+
