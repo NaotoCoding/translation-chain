@@ -1,0 +1,37 @@
+require:
+  - rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 3.2.2
+
+# Gemfileに記載されているGemの重複を許可しない
+Bundler/DuplicatedGem:
+  Enabled: true
+
+# 日本語のコメントを許可する
+Style/AsciiComments:
+  Enabled: false
+
+# マジックコメントによる文字列の不変化を許可しない
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+# ドキュメントのないPublic Classを許可する
+Style/Documentation:
+  Enabled: false
+
+# 空のメソッドを一行で定義することを強制する
+Style/EmptyMethod:
+  Enabled: true
+
+# 正規表現のリテラルの記法を %r で強制しない
+Style/RegexpLiteral:
+  Enabled: false
+
+# privateやprotectedメソッドを字下げする
+Layout/IndentationConsistency:
+  EnforcedStyle: indented_internal_methods
+
+# 文字列をダブルクオーテーションで記載することを強制する
+StringLiterals:
+  EnforcedStyle: double_quotes
