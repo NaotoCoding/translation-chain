@@ -102,6 +102,7 @@ class TranslationChain
       JSON.parse(response.body)["translations"].first["text"]
     end
 
+    # TODO: HttpClientクラスに移動
     def request_post(end_point, headers, body, use_ssl: true)
       uri = URI(end_point)
       https = Net::HTTP.new(uri.host, uri.port)
