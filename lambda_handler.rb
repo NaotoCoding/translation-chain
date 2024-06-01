@@ -2,6 +2,18 @@ require "net/http"
 require "uri"
 require "json"
 
+class HttpClient
+  def post(end_point, headers, body, use_ssl: true)
+    uri = URI(end_point)
+    https = Net::HTTP.new(uri.host, uri.port)
+    https.use_ssl = use_ssl
+    request = Net::HTTP::Post.new(uri)
+    headers.each { |key, value| request[key] = value }
+    request.body = body.to_json
+    https.request(request)
+  end
+end
+
 class TranslationChain
   DEEPL_API_FREE_URI = "https://api-free.deepl.com/v2/translate".freeze
   DEEPL_TRANSLATABLE_SOURCE_LANGS = {
@@ -69,7 +81,8 @@ class TranslationChain
     "ZH" => "中国語（簡体字・繁体字）"
   }.freeze
 
-  def initialize(translation_client_auth_key)
+  def initialize(translation_client_auth_key, http_client: HttpClient.new)
+    @http_client = http_client
     @translation_client_auth_key = translation_client_auth_key
   end
 
@@ -91,7 +104,7 @@ class TranslationChain
     end
 
     def translate(text:, source_lang:, target_lang:)
-      response = request_post(
+      response = @http_client.post(
         DEEPL_API_FREE_URI,
         {
           "Authorization" => "DeepL-Auth-Key #{@translation_client_auth_key}",
@@ -100,17 +113,6 @@ class TranslationChain
         { text: [text], source_lang:, target_lang: }
       )
       JSON.parse(response.body)["translations"].first["text"]
-    end
-
-    # TODO: HttpClientクラスに移動
-    def request_post(end_point, headers, body, use_ssl: true)
-      uri = URI(end_point)
-      https = Net::HTTP.new(uri.host, uri.port)
-      https.use_ssl = use_ssl
-      request = Net::HTTP::Post.new(uri)
-      headers.each { |key, value| request[key] = value }
-      request.body = body.to_json
-      https.request(request)
     end
 end
 
