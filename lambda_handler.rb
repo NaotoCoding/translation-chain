@@ -15,7 +15,7 @@ class HttpClient
   end
 end
 
-class TranslationChain
+class DeeplClient
   DEEPL_API_FREE_URI = "https://api-free.deepl.com/v2/translate".freeze
   DEEPL_TRANSLATABLE_SOURCE_LANGS = {
     "BG" => "ブルガリア語",
@@ -82,42 +82,41 @@ class TranslationChain
     "ZH" => "中国語（簡体字・繁体字）"
   }.freeze
 
-  def initialize(translation_client_auth_key, http_client: HttpClient.new)
+  def initialize(deepl_auth_key:, http_client: HttpClient.new)
+    @deepl_auth_key = deepl_auth_key
     @http_client = http_client
-    @translation_client_auth_key = translation_client_auth_key
+  end
+
+  def call(text:, source_lang:, target_lang:)
+    response = @http_client.post(
+      DEEPL_API_FREE_URI,
+      {
+        "Authorization" => "DeepL-Auth-Key #{@deepl_auth_key}",
+        "Content-Type" => "application/json"
+      },
+      { text: [text], source_lang:, target_lang: }
+    )
+    JSON.parse(response.body)["translations"].first["text"]
+  end
+end
+
+class TranslationChain
+  def initialize(translation_client:)
+    @translation_client = translation_client
   end
 
   def call(initial_text:, initial_source_lang:, target_langs:)
-    check_arguments(initial_source_lang, target_langs)
     initial_result = [lang: initial_source_lang, text: initial_text]
     target_langs.each_with_object(initial_result).with_index do |(target_lang, result), index|
       source_lang = index.zero? ? initial_source_lang : target_langs[index - 1]
       text = index.zero? ? initial_text : result.last["text"]
-      result << { "lang" => target_lang, "text" => translate(text:, source_lang:, target_lang:) }
+      result << { "lang" => target_lang, "text" => @translation_client.call(text:, source_lang:, target_lang:) }
     end
   end
-
-  private
-
-    def check_arguments(initial_source_lang, target_langs)
-      raise ArgumentError unless DEEPL_TRANSLATABLE_SOURCE_LANGS.keys.include?(initial_source_lang)
-      raise ArgumentError unless (target_langs - DEEPL_TRANSLATABLE_TARGET_LANGS.keys).empty?
-    end
-
-    def translate(text:, source_lang:, target_lang:)
-      response = @http_client.post(
-        DEEPL_API_FREE_URI,
-        {
-          "Authorization" => "DeepL-Auth-Key #{@translation_client_auth_key}",
-          "Content-Type" => "application/json"
-        },
-        { text: [text], source_lang:, target_lang: }
-      )
-      JSON.parse(response.body)["translations"].first["text"]
-    end
 end
 
 #--------------------------------------------------------------------------
+
 def ssm_parameter(parameter_key)
   Aws::SSM::Client.new
                   .get_parameter({ name: parameter_key, with_decryption: true })
@@ -125,15 +124,23 @@ def ssm_parameter(parameter_key)
                   .value
 end
 
+def check_arguments(initial_text:, initial_source_lang:, target_langs:)
+  raise ArguemntError if initial_text.empty?
+  raise ArgumentError unless DeeplClient::DEEPL_TRANSLATABLE_SOURCE_LANGS.keys.include?(initial_source_lang)
+  raise ArgumentError unless (target_langs - DeeplClient::DEEPL_TRANSLATABLE_TARGET_LANGS.keys).empty?
+end
+
 def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
   body = JSON.parse(event["body"])
   # ssmのパラメータのkeyを設定する必要あり
   deepl_auth_key = ssm_parameter("")
-  result = TranslationChain.new(deepl_auth_key).call(
-    initial_text: body["initial_text"],
-    initial_source_lang: body["initial_source_lang"],
-    target_langs: body["target_langs"]
-  )
+
+  initial_text = body["initial_text"]
+  initial_source_lang = body["initial_source_lang"]
+  target_langs = body["target_langs"]
+  check_arguments(initial_text:, initial_source_lang:, target_langs:)
+
+  result = TranslationChain.new(deepl_auth_key).call(initial_text:, initial_source_lang:, target_langs:)
   { statusCode: 200, body: result.to_json }
 end
 
