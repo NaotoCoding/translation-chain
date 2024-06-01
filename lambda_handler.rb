@@ -1,6 +1,7 @@
 require "net/http"
 require "uri"
 require "json"
+require "aws-sdk-ssm"
 
 class HttpClient
   def post(end_point, headers, body, use_ssl: true)
@@ -117,11 +118,17 @@ class TranslationChain
 end
 
 #--------------------------------------------------------------------------
+def ssm_parameter(parameter_key)
+  Aws::SSM::Client.new
+                  .get_parameter({ name: parameter_key, with_decryption: true })
+                  .parameter
+                  .value
+end
 
 def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
   body = JSON.parse(event["body"])
-  # ssmからauth_keyを取得する必要あり
-  deepl_auth_key = "deepl_auth_key".freeze
+  # ssmのパラメータのkeyを設定する必要あり
+  deepl_auth_key = ssm_parameter("")
   result = TranslationChain.new(deepl_auth_key).call(
     initial_text: body["initial_text"],
     initial_source_lang: body["initial_source_lang"],
