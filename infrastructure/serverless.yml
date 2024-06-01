@@ -1,0 +1,25 @@
+service: translation-chain-endpoint
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: ruby3.3
+  region: ap-northeast-1
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "ssm:GetParameter"
+          Resource: "arn:aws:ssm:${self:provider.region}:*:parameter/translation-chain/*"
+
+functions:
+  translation_chain:
+    handler: ../translation_chain.lambda_handler
+    events:
+      - httpApi:
+          path: /translates
+          method: get
+
+${file(resources/ssm.yml)}
+

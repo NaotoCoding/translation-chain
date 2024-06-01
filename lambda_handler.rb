@@ -116,6 +116,11 @@ class TranslationChain
 end
 
 #--------------------------------------------------------------------------
+def check_arguments(initial_text:, initial_source_lang:, target_langs:)
+  raise ArguemntError if initial_text.empty?
+  raise ArgumentError unless DeeplClient::DEEPL_TRANSLATABLE_SOURCE_LANGS.keys.include?(initial_source_lang)
+  raise ArgumentError unless (target_langs - DeeplClient::DEEPL_TRANSLATABLE_TARGET_LANGS.keys).empty?
+end
 
 def ssm_parameter(parameter_key)
   Aws::SSM::Client.new
@@ -124,22 +129,14 @@ def ssm_parameter(parameter_key)
                   .value
 end
 
-def check_arguments(initial_text:, initial_source_lang:, target_langs:)
-  raise ArguemntError if initial_text.empty?
-  raise ArgumentError unless DeeplClient::DEEPL_TRANSLATABLE_SOURCE_LANGS.keys.include?(initial_source_lang)
-  raise ArgumentError unless (target_langs - DeeplClient::DEEPL_TRANSLATABLE_TARGET_LANGS.keys).empty?
-end
-
 def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
   body = JSON.parse(event["body"])
-  # ssmのパラメータのkeyを設定する必要あり
-  deepl_auth_key = ssm_parameter("")
-
   initial_text = body["initial_text"]
   initial_source_lang = body["initial_source_lang"]
   target_langs = body["target_langs"]
   check_arguments(initial_text:, initial_source_lang:, target_langs:)
 
+  deepl_auth_key = ssm_parameter("/translation-chain/deepl-auth-key")
   result = TranslationChain.new(deepl_auth_key).call(initial_text:, initial_source_lang:, target_langs:)
   { statusCode: 200, body: result.to_json }
 end
