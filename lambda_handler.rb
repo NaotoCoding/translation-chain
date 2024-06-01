@@ -118,5 +118,15 @@ end
 
 #--------------------------------------------------------------------------
 
-def lambda_handler; end
+def lambda_handler(event:, context:) # rubocop:disable Lint/UnusedMethodArgument
+  body = JSON.parse(event["body"])
+  # ssmからauth_keyを取得する必要あり
+  deepl_auth_key = "deepl_auth_key".freeze
+  result = TranslationChain.new(deepl_auth_key).call(
+    initial_text: body["initial_text"],
+    initial_source_lang: body["initial_source_lang"],
+    target_langs: body["target_langs"]
+  )
+  { statusCode: 200, body: result.to_json }
+end
 
