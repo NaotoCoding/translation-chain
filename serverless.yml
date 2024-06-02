@@ -1,5 +1,5 @@
 service: translation-chain-endpoint
-frameworkVersion: "3"
+frameworkVersion: "4"
 
 provider:
   name: aws
@@ -11,15 +11,23 @@ provider:
         - Effect: "Allow"
           Action:
             - "ssm:GetParameter"
+            - "ssm:PutParameter"
           Resource: "arn:aws:ssm:${self:provider.region}:*:parameter/translation-chain/*"
 
 functions:
   translation_chain:
-    handler: ../translation_chain.lambda_handler
+    handler: app.lambda_handler
     events:
       - httpApi:
           path: /translates
           method: get
 
-${file(resources/ssm.yml)}
+resources:
+  Resources:
+    ssmParam:
+      Type: "AWS::SSM::Parameter"
+      Properties:
+        Name: "/translation-chain/deepl-auth-key"
+        Type: String
+        Value: ${file(./secrets.yml):deeplAuthKey}
 

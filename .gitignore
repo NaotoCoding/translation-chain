@@ -1,2 +1,3 @@
-infrastructure/resources/secrets.yml
+secrets.yml
+.serverless
 

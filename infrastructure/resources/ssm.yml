@@ -1,9 +1,0 @@
-resources:
- Resources:
-   ssmParam:
-     Type: "AWS::SSM::Parameter"
-     Properties:
-       Name: "/translation-chain/deepl-auth-key"
-       Type: SecureString
-       Value: ${file(./secrets.yml):deeplAuthKey}
-
