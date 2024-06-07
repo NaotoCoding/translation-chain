@@ -5,6 +5,7 @@ require_relative "app/translation_chain"
 def check_arguments(initial_text:, initial_source_lang:, target_langs:)
   raise ArguemntError if initial_text.empty?
   raise ArgumentError unless DeeplClient::DEEPL_TRANSLATABLE_SOURCE_LANGS.keys.include?(initial_source_lang)
+  # TODO: 翻訳を連鎖した時、翻訳後の言語が再度翻訳のsourceとなり得ないパターンに対応する必要あり
   raise ArgumentError unless (target_langs - DeeplClient::DEEPL_TRANSLATABLE_TARGET_LANGS.keys).empty?
 end
 
