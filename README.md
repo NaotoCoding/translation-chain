@@ -15,6 +15,8 @@ curl -X GET https://xxxxxx/translates \
 ```
 
 上記のリクエストの場合、レスポンスボディは以下のようになります。
+target_langsとして選択した言語の順にinitial_textを翻訳します。
+各言語に翻訳するわけではなく、翻訳を連鎖します。(例：EN => FR => DE => JAで翻訳)
 ```
 [
   {"lang":"EN","text":"Hello, world!"},
@@ -23,3 +25,4 @@ curl -X GET https://xxxxxx/translates \
   {"lang":"JA","text":"皆さん、こんにちは！"}
 ]
 ```
+
